@@ -4,7 +4,7 @@ function getQueryParam(name) {
   }
 
   const inAppUrl = getQueryParam("url") || "https://appkundli.innovatia.co.in/";
-  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalks"; // replace with your actual package
+  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalk"; // replace with your actual package
 
   // Start timer to fallback to Play Store
   const fallbackTimeout = setTimeout(() => {
