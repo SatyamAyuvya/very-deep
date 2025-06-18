@@ -1,13 +1,25 @@
 function getQueryParam(name) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(name);
-}
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+  }
 
-const inAppUrl = getQueryParam("url") || "https://appkundli.innovatia.co.in/";
+  const inAppUrl = getQueryParam("url") || "https://appkundli.innovatia.co.in/";
+  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalks"; // replace with your actual package
 
-// ✅ Just redirect directly to the URL
-// This lets the Android App Link system trigger the app and pass full URL to React Native
-window.location.href = inAppUrl;
+  // Start timer to fallback to Play Store
+  const fallbackTimeout = setTimeout(() => {
+    window.location.href = playStoreUrl;
+  }, 200);
+
+  // Try opening the app (deep link)
+  window.location.href = inAppUrl;
+
+  // Optional: Clear fallback if app opens (in some edge cases)
+  window.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") {
+      clearTimeout(fallbackTimeout);
+    }
+  });
 
 
 // function getQueryParam(name) {
