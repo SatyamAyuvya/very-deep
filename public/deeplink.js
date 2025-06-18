@@ -1,40 +1,37 @@
-function getQueryParam(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-  }
+(function () {
+  const userAgent = navigator.userAgent || navigator.vendor;
+  const fallbackDelay = 1500;
 
-  const inAppUrl = getQueryParam("url") || "https://appkundli.innovatia.co.in/";
-  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalk"; // replace with your actual package
+  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.kundlitalk';
+  const appStoreUrl = 'https://apps.apple.com/app/idXXXXXXXX'; // 🔁 Replace with your iOS App ID
 
-  // Start timer to fallback to Play Store
-  const fallbackTimeout = setTimeout(() => {
+  // Get `?url=` from query params, fallback to homepage
+  const urlParam = new URLSearchParams(window.location.search).get('url');
+  const appDeepLink = urlParam || 'https://appkundli.innovatia.co.in/app/astro-profile/10';
+
+  const pathOnly = appDeepLink.replace(/^https?:\/\//, '');
+
+  const intentLink =
+    'intent://' +
+    pathOnly +
+    '#Intent;scheme=https;package=com.kundlitalk;S.browser_fallback_url=' +
+    encodeURIComponent(playStoreUrl) +
+    ';end';
+
+  if (/android/i.test(userAgent)) {
+    // ✅ Android - open app or redirect to Play Store
+    window.location.href = intentLink;
+  } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
+    // ✅ iOS - open app via scheme or fallback to App Store
+    const iosScheme = appDeepLink.replace(/^https?:\/\//, 'kundlitalks://');
+
+    window.location.href = iosScheme;
+
+    setTimeout(() => {
+      window.location.href = appStoreUrl;
+    }, fallbackDelay);
+  } else {
+    // ✅ Desktop fallback
     window.location.href = playStoreUrl;
-  }, 200);
-
-  // Try opening the app (deep link)
-  window.location.href = inAppUrl;
-
-  // Optional: Clear fallback if app opens (in some edge cases)
-  window.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") {
-      clearTimeout(fallbackTimeout);
-    }
-  });
-
-
-// function getQueryParam(name) {
-//   const urlParams = new URLSearchParams(window.location.search);
-//   return urlParams.get(name);
-// }
-
-// const inAppUrl = getQueryParam("url") || "https://appkundli.innovatia.co.in/";
-// const fallbackUrl = "https://play.google.com/store/apps/details?id=com.kundlitalk";
-
-// const intentUrl =
-//   "intent://openapp.html?url=" + encodeURIComponent(inAppUrl) +
-//   "#Intent;scheme=https;" +
-//   "package=com.kundlitalk;" +
-//   "S.browser_fallback_url=" + encodeURIComponent(fallbackUrl) + ";" +
-//   "end";
-
-// // window.location.replace(intentUrl);
+  }
+})();
