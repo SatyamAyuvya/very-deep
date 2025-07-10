@@ -31,7 +31,6 @@
   const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
   let didHide = false;
 
-  // Detect if tab is hidden (indicates app opened)
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
       didHide = true;
@@ -48,20 +47,27 @@
     }
   };
 
-  // Platform-specific logic
+  // Updated Android flow
   if (isAndroid) {
-    setTimeout(fallback, fallbackDelay);
+    setTimeout(() => {
+      fallback();
+    }, fallbackDelay);
+
     setTimeout(() => {
       window.location.href = intentLink;
-    }, 100);
+    }, 300);
   } else if (isIOS) {
     const iosScheme = appDeepLink.replace(/^https?:\/\//, "kundlitalks://");
-    setTimeout(fallback, fallbackDelay);
+
+    setTimeout(() => {
+      fallback();
+    }, fallbackDelay);
+
     setTimeout(() => {
       window.location.href = iosScheme;
-    }, 100);
+    }, 300);
   } else {
-    // Desktop fallback
+    // Desktop case
     sendDeepLinkInfo(appDeepLink);
     window.location.href = playStoreUrl;
   }
