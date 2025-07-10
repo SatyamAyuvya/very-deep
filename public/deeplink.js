@@ -15,13 +15,17 @@
   const iosScheme = appDeepLink.replace(/^https?:\/\//, "kundlitalks://");
 
   const sendDeepLinkInfo = (deeplink_url) => {
-    fetch(`${API_BASE_URL}api/user/get_deep_link_url/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: deeplink_url }),
-      keepalive: true,
-    }).then(() => console.log("✅ API called"))
-      .catch(err => console.error("❌ API error:", err));
+    try {
+      fetch(`${API_BASE_URL}api/user/get_deep_link_url/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: deeplink_url }),
+        keepalive: true,
+      }).then(() => console.log("✅ API called"))
+        .catch(err => console.error("❌ API error:", err));
+    } catch (e) {
+      console.warn("Fetch error:", e);
+    }
   };
 
   let didHide = false;
@@ -33,7 +37,7 @@
 
   const fallback = () => {
     if (!didHide) {
-      console.log("❌ App not opened → calling API + redirect to store");
+      console.log("❌ App not opened → calling API + redirecting to store");
       sendDeepLinkInfo(appDeepLink);
       window.location.href = isIOS ? appStoreUrl : playStoreUrl;
     } else {
@@ -42,17 +46,25 @@
   };
 
   if (isAndroid) {
-    setTimeout(fallback, fallbackDelay);
+    // Step 1: fallback timer (fires API + redirect)
     setTimeout(() => {
-      window.location.replace(intentLink);
-    }, 300); // Give enough time for fallback to set
+      fallback();
+    }, fallbackDelay);
+
+    // Step 2: delay intent launch to allow fallback check
+    setTimeout(() => {
+      window.location.href = intentLink;
+    }, fallbackDelay + 200); // Fire intent AFTER fallback
   } else if (isIOS) {
-    setTimeout(fallback, fallbackDelay);
+    setTimeout(() => {
+      fallback();
+    }, fallbackDelay);
+
     setTimeout(() => {
       window.location.href = iosScheme;
-    }, 300);
+    }, fallbackDelay + 200);
   } else {
-    // Desktop: always call API + redirect
+    // Desktop
     sendDeepLinkInfo(appDeepLink);
     window.location.href = playStoreUrl;
   }
