@@ -30,8 +30,10 @@
       );
       const data = await response.json();
       console.log("Deep link API response:", data);
+      alert("✅ API called: " + JSON.stringify(data));
     } catch (error) {
       console.error("Error sending deep link data:", error);
+      alert("❌ API error: " + error.message);
     }
   };
 
