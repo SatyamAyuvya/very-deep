@@ -1,6 +1,6 @@
 (function () {
   const userAgent = navigator.userAgent || navigator.vendor;
-  const fallbackDelay = 1500;
+  const fallbackDelay = 1500; // milliseconds
   const API_BASE_URL = "https://kundlitalk.innovatia.co.in/";
   const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalk";
   const appStoreUrl = "https://apps.apple.com/app/idXXXXXXXX";
@@ -8,23 +8,23 @@
   const appDeepLink = window.location.href;
   const pathOnly = appDeepLink.replace(/^https?:\/\//, "");
 
-  const intentLink = 
+  const intentLink =
     "intent://" + pathOnly +
     "#Intent;scheme=https;package=com.kundlitalk;" +
-    "S.browser_fallback_url=" + encodeURIComponent(playStoreUrl) +
-    ";end";
+    "S.browser_fallback_url=" + encodeURIComponent(playStoreUrl) + ";end";
 
   const sendDeepLinkInfo = (deeplink_url) => {
+    navigator.sendBeacon?.( // use sendBeacon if supported to not block redirect
+      `${API_BASE_URL}api/user/get_deep_link_url/`,
+      new Blob([JSON.stringify({ url: deeplink_url })], { type: "application/json" })
+    );
+    // For older browsers:
     fetch(`${API_BASE_URL}api/user/get_deep_link_url/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: deeplink_url }),
-    })
-    .then(res => res.json())
-    .then(data => console.log("✅ API success:", data))
-    .catch(error => console.error("❌ API error:", error));
+      keepalive: true,
+    }).catch((e) => console.warn("API fallback error:", e));
   };
 
   const isAndroid = /android/i.test(userAgent);
@@ -39,35 +39,28 @@
 
   const fallback = () => {
     if (!didHide) {
-      console.log("❌ App not opened, calling API and redirecting to store");
+      console.log("❌ App not opened, hitting API and redirecting to store");
       sendDeepLinkInfo(appDeepLink);
       window.location.href = isIOS ? appStoreUrl : playStoreUrl;
     } else {
-      console.log("✅ App opened, no need to call API or redirect.");
+      console.log("✅ App opened, skipping store & API call.");
     }
   };
 
-  // Updated Android flow
   if (isAndroid) {
+    setTimeout(fallback, fallbackDelay);
+    // Delay launching intent to allow fallback timer setup
     setTimeout(() => {
-      fallback();
-    }, fallbackDelay);
-
-    setTimeout(() => {
-      window.location.href = intentLink;
-    }, 300);
+      window.location.replace(intentLink);
+    }, 500);
   } else if (isIOS) {
     const iosScheme = appDeepLink.replace(/^https?:\/\//, "kundlitalks://");
-
-    setTimeout(() => {
-      fallback();
-    }, fallbackDelay);
-
+    setTimeout(fallback, fallbackDelay);
     setTimeout(() => {
       window.location.href = iosScheme;
-    }, 300);
+    }, 500);
   } else {
-    // Desktop case
+    // Desktop (always hit API and redirect)
     sendDeepLinkInfo(appDeepLink);
     window.location.href = playStoreUrl;
   }
