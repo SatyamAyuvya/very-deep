@@ -1,33 +1,64 @@
 (function () {
   const userAgent = navigator.userAgent || navigator.vendor;
   const fallbackDelay = 1500;
+  const API_BASE_URL = "https://kundlitalk.innovatia.co.in/";
 
-  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.kundlitalk';
-  const appStoreUrl = 'https://apps.apple.com/app/idXXXXXXXX';
+  const playStoreUrl = "https://play.google.com/store/apps/details?id=com.kundlitalk";
+  const appStoreUrl = "https://apps.apple.com/app/idXXXXXXXX";
 
-  // ✅ This is the full clicked URL
   const appDeepLink = window.location.href;
-
-  console.log('Deep link user clicked:', appDeepLink);
-
-  const pathOnly = appDeepLink.replace(/^https?:\/\//, '');
+  const pathOnly = appDeepLink.replace(/^https?:\/\//, "");
 
   const intentLink =
-    'intent://' +
+    "intent://" +
     pathOnly +
-    '#Intent;scheme=https;package=com.kundlitalk;S.browser_fallback_url=' +
+    "#Intent;scheme=https;package=com.kundlitalk;S.browser_fallback_url=" +
     encodeURIComponent(playStoreUrl) +
-    ';end';
+    ";end";
 
-  if (/android/i.test(userAgent)) {
+  const sendDeepLinkInfo = async (deeplink_url) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}api/user/get_deep_link_url/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: deeplink_url }),
+        }
+      );
+      const data = await response.json();
+      console.log("Deep link API response:", data);
+    } catch (error) {
+      console.error("Error sending deep link data:", error);
+    }
+  };
+
+  const isAndroid = /android/i.test(userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+
+  if (isAndroid) {
     window.location.href = intentLink;
-  } else if (/iPhone|iPad|iPod/i.test(userAgent)) {
-    const iosScheme = appDeepLink.replace(/^https?:\/\//, 'kundlitalks://');
+
+    const timer = setTimeout(() => {
+      sendDeepLinkInfo(appDeepLink).finally(() => {
+        window.location.href = playStoreUrl;
+      });
+    }, fallbackDelay);
+
+    window.addEventListener("blur", () => clearTimeout(timer));
+  } else if (isIOS) {
+    const iosScheme = appDeepLink.replace(/^https?:\/\//, "kundlitalks://");
     window.location.href = iosScheme;
 
-    setTimeout(() => {
-      window.location.href = appStoreUrl;
+    const timer = setTimeout(() => {
+      sendDeepLinkInfo(appDeepLink).finally(() => {
+        window.location.href = appStoreUrl;
+      });
     }, fallbackDelay);
+
+    window.addEventListener("blur", () => clearTimeout(timer));
   } else {
     window.location.href = playStoreUrl;
   }
