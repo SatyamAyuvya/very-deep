@@ -29,10 +29,8 @@
         }
       );
       const data = await response.json();
-      console.log("Deep link API response:", data);
       alert("✅ API called: " + JSON.stringify(data));
     } catch (error) {
-      console.error("Error sending deep link data:", error);
       alert("❌ API error: " + error.message);
     }
   };
@@ -41,8 +39,6 @@
   const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
 
   if (isAndroid) {
-    window.location.href = intentLink;
-
     const timer = setTimeout(() => {
       sendDeepLinkInfo(appDeepLink).finally(() => {
         window.location.href = playStoreUrl;
@@ -50,9 +46,13 @@
     }, fallbackDelay);
 
     window.addEventListener("blur", () => clearTimeout(timer));
+
+    setTimeout(() => {
+      window.location.href = intentLink;
+    }, 100);
+
   } else if (isIOS) {
     const iosScheme = appDeepLink.replace(/^https?:\/\//, "kundlitalks://");
-    window.location.href = iosScheme;
 
     const timer = setTimeout(() => {
       sendDeepLinkInfo(appDeepLink).finally(() => {
@@ -61,6 +61,11 @@
     }, fallbackDelay);
 
     window.addEventListener("blur", () => clearTimeout(timer));
+
+    setTimeout(() => {
+      window.location.href = iosScheme;
+    }, 100);
+
   } else {
     window.location.href = playStoreUrl;
   }
