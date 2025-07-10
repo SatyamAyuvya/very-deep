@@ -29,15 +29,20 @@
   };
 
   let didHide = false;
+
+  // ✅ More accurate tab hiding detection
+  const markHidden = () => {
+    didHide = true;
+  };
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      didHide = true;
-    }
+    if (document.visibilityState === "hidden") markHidden();
   });
+  window.addEventListener("pagehide", markHidden);
+  window.addEventListener("blur", markHidden);
 
   const fallback = () => {
     if (!didHide) {
-      console.log("❌ App not opened → calling API + redirecting to store");
+      console.log("❌ App not opened → API + redirect to store");
       sendDeepLinkInfo(appDeepLink);
       window.location.href = isIOS ? appStoreUrl : playStoreUrl;
     } else {
@@ -46,25 +51,16 @@
   };
 
   if (isAndroid) {
-    // Step 1: fallback timer (fires API + redirect)
+    setTimeout(fallback, fallbackDelay);
     setTimeout(() => {
-      fallback();
-    }, fallbackDelay);
-
-    // Step 2: delay intent launch to allow fallback check
-    setTimeout(() => {
-      window.location.href = intentLink;
-    }, fallbackDelay + 200); // Fire intent AFTER fallback
+      window.location.replace(intentLink);
+    }, fallbackDelay + 200);
   } else if (isIOS) {
-    setTimeout(() => {
-      fallback();
-    }, fallbackDelay);
-
+    setTimeout(fallback, fallbackDelay);
     setTimeout(() => {
       window.location.href = iosScheme;
     }, fallbackDelay + 200);
   } else {
-    // Desktop
     sendDeepLinkInfo(appDeepLink);
     window.location.href = playStoreUrl;
   }
